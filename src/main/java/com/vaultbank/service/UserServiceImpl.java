@@ -72,7 +72,9 @@ public class UserServiceImpl implements UserService {
                 Account.AccountStatus.ACTIVE,
                 savedUser
         );
-
-        return null;
+        
+        accountRepository.save(account);
+        
+        return userMapper.toResponse(savedUser);
     }
 }
