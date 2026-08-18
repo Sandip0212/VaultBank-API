@@ -1,6 +1,10 @@
 package com.vaultbank.controller;
 
 import com.vaultbank.dto.response.AccountResponse;
+import com.vaultbank.dto.request.TransferRequest;
+import com.vaultbank.dto.response.TransferResponse;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PostMapping;
 import com.vaultbank.service.AccountService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -59,6 +63,18 @@ public class AccountController {
 
         WithdrawResponse response =
                 accountService.withdraw(email, request);
+
+        return ResponseEntity.ok(response);
+    }
+    @PostMapping("/account/transfer")
+    public ResponseEntity<TransferResponse> transfer(
+            @Valid @RequestBody TransferRequest request,
+            Authentication authentication) {
+
+        String email = authentication.getName();
+
+        TransferResponse response =
+                accountService.transfer(email, request);
 
         return ResponseEntity.ok(response);
     }
