@@ -1,6 +1,7 @@
 package com.vaultbank.service;
 
 import com.vaultbank.dto.request.RegisterRequest;
+import com.vaultbank.dto.response.ProfileResponse;
 import com.vaultbank.dto.response.UserResponse;
 import com.vaultbank.entity.User;
 import com.vaultbank.exception.DuplicateResourceException;
@@ -76,5 +77,22 @@ public class UserServiceImpl implements UserService {
         accountRepository.save(account);
         
         return userMapper.toResponse(savedUser);
+    }
+    @Override
+    public ProfileResponse getProfile(String email) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        return new ProfileResponse(
+                user.getId(),
+                user.getFullName(),
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getAddress(),
+                user.isEnabled(),
+                user.getCreatedAt()
+        );
     }
 }

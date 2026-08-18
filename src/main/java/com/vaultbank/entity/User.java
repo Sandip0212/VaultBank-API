@@ -69,10 +69,40 @@ public class User {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
     
+    public String getPassword() {
+        return password;
+    }
+    
     public void setPassword(String password) {
         this.password = password;
     }
     public Set<Role> getRoles() {
         return roles;
+    }
+    public String getEmail() {
+        return email;
+    }
+    public Long getId() {
+        return id;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getPhoneNumber() {
+        return phoneNumber;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }

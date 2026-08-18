@@ -14,9 +14,6 @@ import java.util.List;
 
 @Entity
 @Table(name = "accounts")
-@Getter
-@Setter
-@NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Account {
@@ -68,6 +65,8 @@ public class Account {
         FROZEN,
         CLOSED
     }
+    public Account() {
+    }
   
 
     public Account(
@@ -83,4 +82,108 @@ public class Account {
         this.status = status;
         this.user = user;
     }
+
+
+	public Long getId() {
+		return id;
+	}
+
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+
+	public String getAccountNumber() {
+		return accountNumber;
+	}
+
+
+	public void setAccountNumber(String accountNumber) {
+		this.accountNumber = accountNumber;
+	}
+
+
+	public AccountType getAccountType() {
+		return accountType;
+	}
+
+
+	public void setAccountType(AccountType accountType) {
+		this.accountType = accountType;
+	}
+
+
+	public BigDecimal getBalance() {
+		return balance;
+	}
+
+
+	public void setBalance(BigDecimal balance) {
+		this.balance = balance;
+	}
+
+
+	public String getPin() {
+		return pin;
+	}
+
+
+	public void setPin(String pin) {
+		this.pin = pin;
+	}
+
+
+	public AccountStatus getStatus() {
+		return status;
+	}
+
+
+	public void setStatus(AccountStatus status) {
+		this.status = status;
+	}
+
+
+	public User getUser() {
+		return user;
+	}
+
+
+	public void setUser(User user) {
+		this.user = user;
+	}
+
+
+	public List<Transaction> getTransactions() {
+		return transactions;
+	}
+
+
+	public void setTransactions(List<Transaction> transactions) {
+		this.transactions = transactions;
+	}
+
+
+	public LocalDateTime getCreatedAt() {
+		return createdAt;
+	}
+
+
+	public void setCreatedAt(LocalDateTime createdAt) {
+		this.createdAt = createdAt;
+	}
+
+
+	public LocalDateTime getUpdatedAt() {
+		return updatedAt;
+	}
+
+
+	public void setUpdatedAt(LocalDateTime updatedAt) {
+		this.updatedAt = updatedAt;
+	}
+
+
+    
+    
 }
