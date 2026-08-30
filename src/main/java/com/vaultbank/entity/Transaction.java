@@ -63,4 +63,77 @@ public class Transaction {
         SUCCESS,
         FAILED
     }
-}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getReferenceNumber() {
+		return referenceNumber;
+	}
+
+	public void setReferenceNumber(String referenceNumber) {
+		this.referenceNumber = referenceNumber;
+	}
+
+	public BigDecimal getAmount() {
+		return amount;
+	}
+
+	public void setAmount(BigDecimal amount) {
+		this.amount = amount;
+	}
+
+	public TransactionType getTransactionType() {
+		return transactionType;
+	}
+
+	public void setTransactionType(TransactionType transactionType) {
+		this.transactionType = transactionType;
+	}
+
+	public TransactionStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(TransactionStatus status) {
+		this.status = status;
+	}
+
+	public Account getAccount() {
+		return account;
+	}
+
+	public void setAccount(Account account) {
+		this.account = account;
+	}
+
+	public String getDescription() {
+		return description;
+	}
+
+	public void setDescription(String description) {
+		this.description = description;
+	}
+
+	public Account getTargetAccount() {
+		return targetAccount;
+	}
+
+	public void setTargetAccount(Account targetAccount) {
+		this.targetAccount = targetAccount;
+	}
+
+	public LocalDateTime getTransactionDate() {
+		return transactionDate;
+	}
+
+	public void setTransactionDate(LocalDateTime transactionDate) {
+		this.transactionDate = transactionDate;
+	}
+    
+}	

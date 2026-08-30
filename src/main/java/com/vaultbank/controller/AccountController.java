@@ -1,6 +1,13 @@
 package com.vaultbank.controller;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.data.domain.Pageable;
 import com.vaultbank.dto.response.AccountResponse;
+import com.vaultbank.dto.response.TransactionResponse;
+import java.util.List;
 import com.vaultbank.dto.request.TransferRequest;
 import com.vaultbank.dto.response.TransferResponse;
 import jakarta.validation.Valid;
@@ -77,5 +84,21 @@ public class AccountController {
                 accountService.transfer(email, request);
 
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/transactions")
+    public ResponseEntity<Page<TransactionResponse>> getTransactions(
+            Authentication authentication,
+            @RequestParam(required = false) String type,
+            Pageable pageable) {
+
+        String email = authentication.getName();
+
+        Page<TransactionResponse> transactions =
+                accountService.getTransactions(
+                        email,
+                        type,
+                        pageable);
+
+        return ResponseEntity.ok(transactions);
     }
 }
