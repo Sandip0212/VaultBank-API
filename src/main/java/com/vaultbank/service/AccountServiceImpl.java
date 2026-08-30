@@ -30,20 +30,26 @@ import com.vaultbank.dto.response.TransactionResponse;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.vaultbank.dto.request.CreatePinRequest;
+import com.vaultbank.dto.request.UpdatePinRequest;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 @Service
 public class AccountServiceImpl implements AccountService {
 
-    private final AccountRepository accountRepository;
-    private final TransactionRepository transactionRepository;
+	private final AccountRepository accountRepository;
+	private final TransactionRepository transactionRepository;
+	private final PasswordEncoder passwordEncoder;
 
-    public AccountServiceImpl(
-            AccountRepository accountRepository,
-            TransactionRepository transactionRepository) {
+	public AccountServiceImpl(
+	        AccountRepository accountRepository,
+	        TransactionRepository transactionRepository,
+	        PasswordEncoder passwordEncoder) {
 
-        this.accountRepository = accountRepository;
-        this.transactionRepository = transactionRepository;
-    }
+	    this.accountRepository = accountRepository;
+	    this.transactionRepository = transactionRepository;
+	    this.passwordEncoder = passwordEncoder;
+	}
 
     // =========================================================
     // GET ACCOUNT
@@ -327,6 +333,82 @@ public class AccountServiceImpl implements AccountService {
                     transaction.getTransactionDate()
             );
         });
-    
+        
+       
+    }@Override
+    public void createPin(
+            String email,
+            CreatePinRequest request) {
+
+        Account account = accountRepository
+                .findByUserEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Account not found"));
+
+        if (account.getPin() != null &&
+                !account.getPin().isBlank()) {
+
+            throw new IllegalStateException(
+                    "PIN already exists");
+        }
+
+        String encodedPin =
+                passwordEncoder.encode(
+                        request.getPin());
+
+        account.setPin(encodedPin);
+
+        accountRepository.save(account);
+    }
+
+    // =========================================================
+    // UPDATE PIN
+    // =========================================================
+
+    @Override
+    public void updatePin(
+            String email,
+            UpdatePinRequest request) {
+
+        Account account = accountRepository
+                .findByUserEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Account not found"));
+
+        if (account.getPin() == null ||
+                account.getPin().isBlank()) {
+
+            throw new IllegalStateException(
+                    "PIN is not created yet");
+        }
+
+        // Verify old PIN
+        if (!passwordEncoder.matches(
+                request.getOldPin(),
+                account.getPin())) {
+
+            throw new IllegalArgumentException(
+                    "Old PIN is incorrect");
+        }
+
+        // Check same PIN
+        if (passwordEncoder.matches(
+                request.getNewPin(),
+                account.getPin())) {
+
+            throw new IllegalArgumentException(
+                    "New PIN must be different from old PIN");
+        }
+
+        // Encode new PIN
+        String encodedNewPin =
+                passwordEncoder.encode(
+                        request.getNewPin());
+
+        account.setPin(encodedNewPin);
+
+        accountRepository.save(account);
     }
 }

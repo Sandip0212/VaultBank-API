@@ -12,6 +12,8 @@ import com.vaultbank.dto.response.TransactionResponse;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.vaultbank.dto.request.CreatePinRequest;
+import com.vaultbank.dto.request.UpdatePinRequest;
 
 public interface AccountService {
 
@@ -33,4 +35,11 @@ public interface AccountService {
             String email,
             String type,
             Pageable pageable);
+    void createPin(
+            String email,
+            CreatePinRequest request);
+
+    void updatePin(
+            String email,
+            UpdatePinRequest request);
 }
