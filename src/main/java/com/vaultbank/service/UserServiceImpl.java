@@ -1,6 +1,7 @@
 package com.vaultbank.service;
 
 import com.vaultbank.dto.request.RegisterRequest;
+import com.vaultbank.dto.request.ChangePasswordRequest;
 import com.vaultbank.dto.response.ProfileResponse;
 import com.vaultbank.dto.response.UserResponse;
 import com.vaultbank.entity.User;
@@ -94,5 +95,43 @@ public class UserServiceImpl implements UserService {
                 user.isEnabled(),
                 user.getCreatedAt()
         );
+    }
+    @Override
+    public void changePassword(
+            String email,
+            ChangePasswordRequest request) {
+
+        User user = userRepository
+                .findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found"));
+
+        // Verify current password
+        if (!passwordEncoder.matches(
+                request.getCurrentPassword(),
+                user.getPassword())) {
+
+            throw new IllegalArgumentException(
+                    "Current password is incorrect");
+        }
+
+        // Prevent using the same password
+        if (passwordEncoder.matches(
+                request.getNewPassword(),
+                user.getPassword())) {
+
+            throw new IllegalArgumentException(
+                    "New password must be different from current password");
+        }
+
+        // Encode new password
+        String encodedPassword =
+                passwordEncoder.encode(
+                        request.getNewPassword());
+
+        user.setPassword(encodedPassword);
+
+        userRepository.save(user);
     }
 }
