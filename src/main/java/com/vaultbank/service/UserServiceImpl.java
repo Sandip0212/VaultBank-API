@@ -1,6 +1,8 @@
 package com.vaultbank.service;
 
 import com.vaultbank.dto.request.RegisterRequest;
+import com.vaultbank.repository.OtpRepository;
+import com.vaultbank.entity.Otp;
 import com.vaultbank.dto.request.ChangePasswordRequest;
 import com.vaultbank.dto.response.ProfileResponse;
 import com.vaultbank.dto.response.UserResponse;
@@ -28,6 +30,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final AccountRepository accountRepository;
+    private final OtpRepository otpRepository;
     
 
     public UserServiceImpl(
@@ -35,13 +38,15 @@ public class UserServiceImpl implements UserService {
             UserMapper userMapper,
             PasswordEncoder passwordEncoder,
             RoleRepository roleRepository,
-            AccountRepository accountRepository) {
+            AccountRepository accountRepository,
+            OtpRepository otpRepository) {
 
         this.userRepository = userRepository;
         this.userMapper = userMapper;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.accountRepository = accountRepository;
+        this.otpRepository = otpRepository;
     }
     @Override
     @Transactional
@@ -131,6 +136,31 @@ public class UserServiceImpl implements UserService {
                         request.getNewPassword());
 
         user.setPassword(encodedPassword);
+
+        userRepository.save(user);
+    }
+    
+    @Override
+    @Transactional
+    public void resetPassword(String email, String newPassword) {
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found"));
+
+        Otp otp = otpRepository
+                .findTopByEmailOrderByCreatedAtDesc(email)
+                .orElseThrow(() ->
+                        new IllegalArgumentException("OTP verification required"));
+
+        if (!otp.isVerified()) {
+            throw new IllegalArgumentException(
+                    "OTP verification required");
+        }
+
+        user.setPassword(
+                passwordEncoder.encode(newPassword)
+        );
 
         userRepository.save(user);
     }

@@ -20,7 +20,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public JwtAuthenticationFilter(JwtUtil jwtUtil) {
         this.jwtUtil = jwtUtil;
     }
-
+    
+//    tempory
+    
+    
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,

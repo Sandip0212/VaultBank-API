@@ -13,4 +13,5 @@ public interface UserService {
     void changePassword(
             String email,
             ChangePasswordRequest request);
+    void resetPassword(String email, String newPassword);
 }
