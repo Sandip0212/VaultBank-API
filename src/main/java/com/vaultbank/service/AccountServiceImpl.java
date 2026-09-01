@@ -1,6 +1,7 @@
 package com.vaultbank.service;
 
 import com.vaultbank.dto.request.DepositRequest;
+import org.springframework.transaction.annotation.Transactional;
 import com.vaultbank.dto.response.TransactionResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -74,7 +75,7 @@ public class AccountServiceImpl implements AccountService {
     // =========================================================
     // DEPOSIT
     // =========================================================
-
+    @Transactional
     @Override
     public DepositResponse deposit(
             String email,
@@ -124,7 +125,7 @@ public class AccountServiceImpl implements AccountService {
     // =========================================================
     // WITHDRAW
     // =========================================================
-
+    @Transactional
     @Override
     public WithdrawResponse withdraw(
             String email,
@@ -183,7 +184,7 @@ public class AccountServiceImpl implements AccountService {
     // =========================================================
     // TRANSFER
     // =========================================================
-
+    @Transactional
     @Override
     public TransferResponse transfer(
             String email,

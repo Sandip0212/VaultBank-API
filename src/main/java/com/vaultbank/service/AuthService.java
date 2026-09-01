@@ -6,4 +6,8 @@ import com.vaultbank.dto.response.LoginResponse;
 public interface AuthService {
 
     LoginResponse login(LoginRequest request);
+    
+    LoginResponse refreshToken(String refreshToken);
+    
+    void logout(String refreshToken);
 }

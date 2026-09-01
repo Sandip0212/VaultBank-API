@@ -2,16 +2,28 @@ package com.vaultbank.dto.response;
 
 public class LoginResponse {
 
-    private String token;
+    private String accessToken;
+
+    private String refreshToken;
+
     private UserResponse user;
 
-    public LoginResponse(String token, UserResponse user) {
-        this.token = token;
+    public LoginResponse(
+            String accessToken,
+            String refreshToken,
+            UserResponse user) {
+
+        this.accessToken = accessToken;
+        this.refreshToken = refreshToken;
         this.user = user;
     }
 
-    public String getToken() {
-        return token;
+    public String getAccessToken() {
+        return accessToken;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
     }
 
     public UserResponse getUser() {

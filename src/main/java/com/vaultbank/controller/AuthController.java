@@ -1,6 +1,7 @@
 package com.vaultbank.controller;
 
 import com.vaultbank.dto.request.LoginRequest;
+import com.vaultbank.dto.request.RefreshTokenRequest;
 import com.vaultbank.dto.request.ForgotPasswordRequest;
 import com.vaultbank.service.OtpService;
 import com.vaultbank.dto.request.RegisterRequest;
@@ -77,5 +78,23 @@ public class AuthController {
         );
 
         return ResponseEntity.ok("Password reset successfully");
+    }
+    
+    @PostMapping("/refresh-token")
+    public ResponseEntity<LoginResponse> refreshToken(
+            @Valid @RequestBody RefreshTokenRequest request) {
+
+        return ResponseEntity.ok(
+                authService.refreshToken(request.getRefreshToken())
+        );
+    }
+    
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(
+            @Valid @RequestBody RefreshTokenRequest request) {
+
+        authService.logout(request.getRefreshToken());
+
+        return ResponseEntity.ok("Logout successful");
     }
 }
