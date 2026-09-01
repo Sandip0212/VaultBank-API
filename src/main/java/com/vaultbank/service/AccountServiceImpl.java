@@ -2,6 +2,8 @@ package com.vaultbank.service;
 
 import com.vaultbank.dto.request.DepositRequest;
 import org.springframework.transaction.annotation.Transactional;
+import com.vaultbank.entity.Account;
+import org.springframework.transaction.annotation.Transactional;
 import com.vaultbank.dto.response.TransactionResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -409,6 +411,30 @@ public class AccountServiceImpl implements AccountService {
                         request.getNewPin());
 
         account.setPin(encodedNewPin);
+
+        accountRepository.save(account);
+    }
+    
+    @Override
+    @Transactional
+    public void freezeAccount(Long accountId) {
+
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() ->
+                        new RuntimeException(
+                                "Account not found with id: " + accountId));
+
+        if (account.getStatus() == Account.AccountStatus.CLOSED) {
+            throw new RuntimeException(
+                    "Closed account cannot be frozen");
+        }
+
+        if (account.getStatus() == Account.AccountStatus.FROZEN) {
+            throw new RuntimeException(
+                    "Account is already frozen");
+        }
+
+        account.setStatus(Account.AccountStatus.FROZEN);
 
         accountRepository.save(account);
     }

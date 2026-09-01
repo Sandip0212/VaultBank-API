@@ -42,4 +42,6 @@ public interface AccountService {
     void updatePin(
             String email,
             UpdatePinRequest request);
+    
+    void freezeAccount(Long accountId);
 }

@@ -1,12 +1,15 @@
 package com.vaultbank.security;
 
 import com.vaultbank.util.JwtUtil;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -16,14 +19,16 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
+    private final CustomUserDetailsService customUserDetailsService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil) {
+    public JwtAuthenticationFilter(
+            JwtUtil jwtUtil,
+            CustomUserDetailsService customUserDetailsService) {
+
         this.jwtUtil = jwtUtil;
+        this.customUserDetailsService = customUserDetailsService;
     }
-    
-//    tempory
-    
-    
+
     @Override
     protected void doFilterInternal(
             HttpServletRequest request,
@@ -33,24 +38,42 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // No Authorization header
+        if (authHeader == null ||
+                !authHeader.startsWith("Bearer ")) {
+
             filterChain.doFilter(request, response);
             return;
         }
 
         String token = authHeader.substring(7);
 
+        // Refresh token cannot be used for normal APIs
+        if (jwtUtil.isRefreshToken(token)) {
+
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
+
             String email = jwtUtil.extractEmail(token);
 
             if (email != null &&
-                    SecurityContextHolder.getContext().getAuthentication() == null) {
+                    SecurityContextHolder.getContext()
+                            .getAuthentication() == null) {
 
+                // Load user and roles from database
+                UserDetails userDetails =
+                        customUserDetailsService
+                                .loadUserByUsername(email);
+
+                // Create authenticated user with authorities
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                email,
+                                userDetails,
                                 null,
-                                null
+                                userDetails.getAuthorities()
                         );
 
                 SecurityContextHolder.getContext()
@@ -58,6 +81,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
         } catch (Exception exception) {
+
             // Invalid token - continue without authentication
         }
 
