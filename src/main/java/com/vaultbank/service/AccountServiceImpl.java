@@ -1,18 +1,15 @@
 package com.vaultbank.service;
 
+import com.vaultbank.dto.request.CreatePinRequest;
+
 import com.vaultbank.dto.request.DepositRequest;
-import org.springframework.transaction.annotation.Transactional;
-import com.vaultbank.entity.Account;
-import org.springframework.transaction.annotation.Transactional;
-import com.vaultbank.dto.response.TransactionResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import java.util.List;
 import com.vaultbank.dto.request.TransferRequest;
+import com.vaultbank.dto.request.UpdatePinRequest;
 import com.vaultbank.dto.request.WithdrawRequest;
 
 import com.vaultbank.dto.response.AccountResponse;
 import com.vaultbank.dto.response.DepositResponse;
+import com.vaultbank.dto.response.TransactionResponse;
 import com.vaultbank.dto.response.TransferResponse;
 import com.vaultbank.dto.response.WithdrawResponse;
 
@@ -25,34 +22,47 @@ import com.vaultbank.exception.ResourceNotFoundException;
 import com.vaultbank.repository.AccountRepository;
 import com.vaultbank.repository.TransactionRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import com.vaultbank.dto.response.TransactionResponse;
 
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import com.vaultbank.dto.request.CreatePinRequest;
-import com.vaultbank.dto.request.UpdatePinRequest;
-
-import org.springframework.security.crypto.password.PasswordEncoder;
 @Service
 public class AccountServiceImpl implements AccountService {
+	
+	
 
-	private final AccountRepository accountRepository;
-	private final TransactionRepository transactionRepository;
-	private final PasswordEncoder passwordEncoder;
+    private final AccountRepository accountRepository;
+    private final TransactionRepository transactionRepository;
+    private final PasswordEncoder passwordEncoder;
 
-	public AccountServiceImpl(
-	        AccountRepository accountRepository,
-	        TransactionRepository transactionRepository,
-	        PasswordEncoder passwordEncoder) {
+    public AccountServiceImpl(
+            AccountRepository accountRepository,
+            TransactionRepository transactionRepository,
+            PasswordEncoder passwordEncoder) {
 
-	    this.accountRepository = accountRepository;
-	    this.transactionRepository = transactionRepository;
-	    this.passwordEncoder = passwordEncoder;
-	}
+        this.accountRepository = accountRepository;
+        this.transactionRepository = transactionRepository;
+        this.passwordEncoder = passwordEncoder;
+    }
+
+    // =========================================================
+    // ACCOUNT STATUS VALIDATION
+    // =========================================================
+
+    private void validateAccountIsActive(Account account) {
+
+        if (account.getStatus() != Account.AccountStatus.ACTIVE) {
+
+        	throw new IllegalStateException(
+        	        "Account is not active. Current status: "
+        	                + account.getStatus());
+        }
+    }
 
     // =========================================================
     // GET ACCOUNT
@@ -63,29 +73,34 @@ public class AccountServiceImpl implements AccountService {
 
         Account account = accountRepository.findByUserEmail(email)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Account not found"));
+                        new ResourceNotFoundException(
+                                "Account not found"));
 
         return new AccountResponse(
                 account.getId(),
                 account.getAccountNumber(),
                 account.getAccountType(),
                 account.getBalance(),
-                account.getStatus()
-        );
+                account.getStatus());
     }
 
     // =========================================================
     // DEPOSIT
     // =========================================================
+
     @Transactional
     @Override
     public DepositResponse deposit(
             String email,
             DepositRequest request) {
 
-        Account account = accountRepository.findByUserEmail(email)
+        Account account = accountRepository.findByUserEmailForUpdate(email)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Account not found"));
+                        new ResourceNotFoundException(
+                                "Account not found"));
+
+        // Check account status
+        validateAccountIsActive(account);
 
         BigDecimal depositAmount = request.getAmount();
 
@@ -120,22 +135,26 @@ public class AccountServiceImpl implements AccountService {
         return new DepositResponse(
                 "Amount deposited successfully",
                 depositAmount,
-                newBalance
-        );
+                newBalance);
     }
 
     // =========================================================
     // WITHDRAW
     // =========================================================
+
     @Transactional
     @Override
     public WithdrawResponse withdraw(
             String email,
             WithdrawRequest request) {
 
-        Account account = accountRepository.findByUserEmail(email)
+        Account account = accountRepository.findByUserEmailForUpdate(email)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Account not found"));
+                        new ResourceNotFoundException(
+                                "Account not found"));
+
+        // Check account status
+        validateAccountIsActive(account);
 
         BigDecimal withdrawAmount = request.getAmount();
 
@@ -179,13 +198,13 @@ public class AccountServiceImpl implements AccountService {
         return new WithdrawResponse(
                 "Amount withdrawn successfully",
                 withdrawAmount,
-                newBalance
-        );
+                newBalance);
     }
 
     // =========================================================
     // TRANSFER
     // =========================================================
+
     @Transactional
     @Override
     public TransferResponse transfer(
@@ -193,19 +212,25 @@ public class AccountServiceImpl implements AccountService {
             TransferRequest request) {
 
         // 1. Find sender account
-        Account senderAccount = accountRepository
-                .findByUserEmail(email)
+    	Account senderAccount = accountRepository
+    	        .findByUserEmailForUpdate(email)
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Sender account not found"));
 
+        // Check sender account status
+        validateAccountIsActive(senderAccount);
+
         // 2. Find receiver account
         Account receiverAccount = accountRepository
-                .findByAccountNumber(
-                        request.getReceiverAccountNumber())
+        		.findByAccountNumberForUpdate(
+        		        request.getReceiverAccountNumber())
                 .orElseThrow(() ->
                         new ResourceNotFoundException(
                                 "Receiver account not found"));
+
+        // Check receiver account status
+        validateAccountIsActive(receiverAccount);
 
         // 3. Prevent transfer to same account
         if (senderAccount.getId()
@@ -239,7 +264,7 @@ public class AccountServiceImpl implements AccountService {
         senderAccount.setBalance(senderNewBalance);
         receiverAccount.setBalance(receiverNewBalance);
 
-     // 8. Save both accounts
+        // 8. Save both accounts
         accountRepository.save(senderAccount);
         accountRepository.save(receiverAccount);
 
@@ -269,9 +294,13 @@ public class AccountServiceImpl implements AccountService {
         return new TransferResponse(
                 "Amount transferred successfully",
                 transferAmount,
-                senderNewBalance
-        );
+                senderNewBalance);
     }
+
+    // =========================================================
+    // TRANSACTION HISTORY
+    // =========================================================
+
     @Override
     public Page<TransactionResponse> getTransactions(
             String email,
@@ -281,7 +310,8 @@ public class AccountServiceImpl implements AccountService {
         Account account = accountRepository
                 .findByUserEmail(email)
                 .orElseThrow(() ->
-                        new ResourceNotFoundException("Account not found"));
+                        new ResourceNotFoundException(
+                                "Account not found"));
 
         Page<Transaction> transactions;
 
@@ -298,11 +328,13 @@ public class AccountServiceImpl implements AccountService {
             Transaction.TransactionType transactionType;
 
             try {
+
                 transactionType =
                         Transaction.TransactionType.valueOf(
                                 type.toUpperCase());
 
             } catch (IllegalArgumentException e) {
+
                 throw new IllegalArgumentException(
                         "Invalid transaction type: " + type);
             }
@@ -320,6 +352,7 @@ public class AccountServiceImpl implements AccountService {
             String targetAccountNumber = null;
 
             if (transaction.getTargetAccount() != null) {
+
                 targetAccountNumber =
                         transaction.getTargetAccount()
                                 .getAccountNumber();
@@ -333,12 +366,15 @@ public class AccountServiceImpl implements AccountService {
                     transaction.getStatus().name(),
                     transaction.getDescription(),
                     targetAccountNumber,
-                    transaction.getTransactionDate()
-            );
+                    transaction.getTransactionDate());
         });
-        
-       
-    }@Override
+    }
+
+    // =========================================================
+    // CREATE PIN
+    // =========================================================
+
+    @Override
     public void createPin(
             String email,
             CreatePinRequest request) {
@@ -414,28 +450,84 @@ public class AccountServiceImpl implements AccountService {
 
         accountRepository.save(account);
     }
-    
+
+    // =========================================================
+    // FREEZE ACCOUNT
+    // =========================================================
+
     @Override
     @Transactional
     public void freezeAccount(Long accountId) {
 
-        Account account = accountRepository.findById(accountId)
+        Account account = accountRepository
+                .findById(accountId)
                 .orElseThrow(() ->
                         new RuntimeException(
-                                "Account not found with id: " + accountId));
+                                "Account not found with id: "
+                                        + accountId));
 
-        if (account.getStatus() == Account.AccountStatus.CLOSED) {
+        if (account.getStatus() ==
+                Account.AccountStatus.CLOSED) {
+
             throw new RuntimeException(
                     "Closed account cannot be frozen");
         }
 
-        if (account.getStatus() == Account.AccountStatus.FROZEN) {
+        if (account.getStatus() ==
+                Account.AccountStatus.FROZEN) {
+
             throw new RuntimeException(
                     "Account is already frozen");
         }
 
-        account.setStatus(Account.AccountStatus.FROZEN);
+        account.setStatus(
+                Account.AccountStatus.FROZEN);
 
+        accountRepository.save(account);
+    }
+    
+    @Override
+    @Transactional
+    public void unfreezeAccount(Long accountId) {
+
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Account not found with id: " + accountId));
+
+        if (account.getStatus() == Account.AccountStatus.CLOSED) {
+            throw new IllegalStateException(
+                    "Closed account cannot be unfrozen");
+        }
+
+        if (account.getStatus() == Account.AccountStatus.ACTIVE) {
+            throw new IllegalStateException(
+                    "Account is already active");
+        }
+
+        account.setStatus(Account.AccountStatus.ACTIVE);
+        accountRepository.save(account);
+    }
+    
+    @Override
+    @Transactional
+    public void closeAccount(Long accountId) {
+
+        Account account = accountRepository.findById(accountId)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "Account not found with id: " + accountId));
+
+        if (account.getStatus() == Account.AccountStatus.CLOSED) {
+            throw new IllegalStateException(
+                    "Account is already closed");
+        }
+
+        if (account.getBalance().compareTo(BigDecimal.ZERO) > 0) {
+            throw new IllegalStateException(
+                    "Account cannot be closed while balance is greater than zero");
+        }
+        account.setStatus(Account.AccountStatus.CLOSED);
         accountRepository.save(account);
     }
 }

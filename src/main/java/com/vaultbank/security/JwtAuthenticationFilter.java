@@ -68,6 +68,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                         customUserDetailsService
                                 .loadUserByUsername(email);
 
+                // Disabled user cannot be authenticated
+                if (!userDetails.isEnabled()) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 // Create authenticated user with authorities
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(

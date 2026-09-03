@@ -1,6 +1,8 @@
 package com.vaultbank.controller;
 
 import java.util.List;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +20,7 @@ import com.vaultbank.repository.UserRepository;
 import com.vaultbank.service.AccountService;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -129,5 +132,56 @@ public class AdminController {
 
         return ResponseEntity.ok(
                 "Account frozen successfully");
+    }
+    
+    @PutMapping("/users/{id}/status")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> updateUserStatus(
+            @PathVariable Long id,
+            @RequestParam boolean enabled) {
+
+        User user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found with id: " + id));
+
+        Authentication authentication = SecurityContextHolder
+                .getContext()
+                .getAuthentication();
+
+        if (authentication.getName().equals(user.getEmail())
+                && !enabled) {
+
+            throw new IllegalStateException(
+                    "Admin cannot disable their own account");
+        }
+
+        user.setEnabled(enabled);
+        userRepository.save(user);
+
+        String message = enabled
+                ? "User enabled successfully"
+                : "User disabled successfully";
+
+        return ResponseEntity.ok(message);
+    }
+    
+    @PutMapping("/accounts/{accountId}/unfreeze")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> unfreezeAccount(
+            @PathVariable Long accountId) {
+
+        accountService.unfreezeAccount(accountId);
+
+        return ResponseEntity.ok("Account unfrozen successfully");
+    }
+    
+    @PutMapping("/accounts/{accountId}/close")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<String> closeAccount(
+            @PathVariable Long accountId) {
+
+        accountService.closeAccount(accountId);
+
+        return ResponseEntity.ok("Account closed successfully");
     }
 }

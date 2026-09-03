@@ -44,4 +44,8 @@ public interface AccountService {
             UpdatePinRequest request);
     
     void freezeAccount(Long accountId);
+    
+    void unfreezeAccount(Long accountId);
+    
+    void closeAccount(Long accountId);
 }
