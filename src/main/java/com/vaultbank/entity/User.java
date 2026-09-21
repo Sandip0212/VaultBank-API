@@ -109,4 +109,11 @@ public class User {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+    public Account getAccount() {
+        return account;
+    }
+
+    public void setAccount(Account account) {
+        this.account = account;
+    }
 }

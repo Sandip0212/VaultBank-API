@@ -2,6 +2,8 @@ package com.vaultbank.controller;
 
 import java.util.List;
 
+import com.vaultbank.dto.request.CreateAccountRequest;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +41,23 @@ public class AccountController {
     public AccountController(AccountService accountService) {
         this.accountService = accountService;
     }
+    
+ // =========================================================
+ // CREATE ACCOUNT
+ // =========================================================
+
+ @PostMapping("/account/create")
+ public ResponseEntity<AccountResponse> createAccount(
+         @Valid @RequestBody CreateAccountRequest request,
+         Authentication authentication) {
+
+     String email = authentication.getName();
+
+     AccountResponse response =
+             accountService.createAccount(email, request);
+
+     return ResponseEntity.ok(response);
+ }
 
     // =========================================================
     // GET ACCOUNT

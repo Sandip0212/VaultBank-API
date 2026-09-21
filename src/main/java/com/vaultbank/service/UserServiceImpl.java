@@ -74,15 +74,7 @@ public class UserServiceImpl implements UserService {
         user.getRoles().add(userRole);
         User savedUser = userRepository.save(user);
         
-        Account account = new Account(
-                AccountNumberGenerator.generate(),
-                Account.AccountType.SAVINGS,
-                BigDecimal.ZERO,
-                Account.AccountStatus.ACTIVE,
-                savedUser
-        );
-        
-        accountRepository.save(account);
+       
         
         return userMapper.toResponse(savedUser);
     }

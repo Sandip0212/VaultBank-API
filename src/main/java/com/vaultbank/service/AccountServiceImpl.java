@@ -1,6 +1,10 @@
 package com.vaultbank.service;
 
 import com.vaultbank.dto.request.CreatePinRequest;
+import com.vaultbank.dto.request.CreateAccountRequest;
+import com.vaultbank.entity.User;
+import com.vaultbank.repository.UserRepository;
+
 
 import com.vaultbank.dto.request.DepositRequest;
 import com.vaultbank.dto.request.TransferRequest;
@@ -36,19 +40,22 @@ public class AccountServiceImpl implements AccountService {
 	
 	
 
-    private final AccountRepository accountRepository;
-    private final TransactionRepository transactionRepository;
-    private final PasswordEncoder passwordEncoder;
+	private final AccountRepository accountRepository;
+	private final TransactionRepository transactionRepository;
+	private final PasswordEncoder passwordEncoder;
+	private final UserRepository userRepository;
+	
+	public AccountServiceImpl(
+	        AccountRepository accountRepository,
+	        TransactionRepository transactionRepository,
+	        PasswordEncoder passwordEncoder,
+	        UserRepository userRepository) {
 
-    public AccountServiceImpl(
-            AccountRepository accountRepository,
-            TransactionRepository transactionRepository,
-            PasswordEncoder passwordEncoder) {
-
-        this.accountRepository = accountRepository;
-        this.transactionRepository = transactionRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+	    this.accountRepository = accountRepository;
+	    this.transactionRepository = transactionRepository;
+	    this.passwordEncoder = passwordEncoder;
+	    this.userRepository = userRepository;
+	}
 
     // =========================================================
     // ACCOUNT STATUS VALIDATION
@@ -63,7 +70,58 @@ public class AccountServiceImpl implements AccountService {
         	                + account.getStatus());
         }
     }
+    @Override
+    @Transactional
+    public AccountResponse createAccount(
+            String email,
+            CreateAccountRequest request) {
+    	
+    	System.out.println("CREATE ACCOUNT EMAIL: " + email);
 
+        // Find logged-in user
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "User not found"));
+
+        // Check if user already has an account
+        if (accountRepository.findByUserEmail(email).isPresent()) {
+            throw new IllegalStateException("User already has an account");
+        }
+
+        // Generate unique account number
+        String accountNumber;
+
+        do {
+            accountNumber = generateAccountNumber();
+        } while (accountRepository.existsByAccountNumber(accountNumber));
+
+        // Create account
+        Account account = new Account(
+                accountNumber,
+                request.getAccountType(),
+                BigDecimal.ZERO,
+                Account.AccountStatus.ACTIVE,
+                user
+        );
+
+        // Save account
+        Account savedAccount = accountRepository.save(account);
+
+        // Link account to user
+        user.setAccount(savedAccount);
+        userRepository.save(user);
+
+        // Return account details
+        return new AccountResponse(
+                savedAccount.getId(),
+                savedAccount.getAccountNumber(),
+                savedAccount.getAccountType(),
+                savedAccount.getBalance(),
+                savedAccount.getStatus(),
+                savedAccount.getCreatedAt());
+    }
+    
     // =========================================================
     // GET ACCOUNT
     // =========================================================
@@ -81,9 +139,10 @@ public class AccountServiceImpl implements AccountService {
                 account.getAccountNumber(),
                 account.getAccountType(),
                 account.getBalance(),
-                account.getStatus());
+                account.getStatus(),
+                account.getCreatedAt());
     }
-
+  
     // =========================================================
     // DEPOSIT
     // =========================================================
@@ -529,5 +588,14 @@ public class AccountServiceImpl implements AccountService {
         }
         account.setStatus(Account.AccountStatus.CLOSED);
         accountRepository.save(account);
+    }
+    
+    private String generateAccountNumber() {
+
+        long number =
+                10000000000000L
+                + (long) (Math.random() * 90000000000000L);
+
+        return String.valueOf(number);
     }
 }
